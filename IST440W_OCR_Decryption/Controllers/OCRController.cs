@@ -21,16 +21,22 @@ namespace IST440W_OCR_Decryption.Controllers
         static string subscriptionKey;
         static string endpoint;
         static string uriBase;
+        static string readURIBase;
 
+
+        // Set main class variables
         public OCRController()
         {
             subscriptionKey = "24ed91821f084f98ba0007e6b513d32b";
             endpoint = "https://ist440wfall2020ocrdecryption.cognitiveservices.azure.com/";
             uriBase = endpoint + "vision/v2.1/ocr";
+            readURIBase = endpoint + "vision/v3.0/read/analyze"
         }
 
+
+        // Task that returns OcrResultDTO, includes turning image into byte array
         [HttpPost, DisableRequestSizeLimit]
-        public async Task<OcrResultDTO> Post()
+        public async Task<OcrResultDTO> PostOCR()
         {
             StringBuilder sb = new StringBuilder();
             OcrResultDTO ocrResultDTO = new OcrResultDTO();
@@ -80,6 +86,87 @@ namespace IST440W_OCR_Decryption.Controllers
             }
         }
 
+        // Task that returns ReadResultDTO, includes turning image into byte array
+        [HttpPost, DisableRequestSizeLimit]
+        public async Task<ReadResultDTO> PostRead()
+        {
+            StringBuilder sb = new StringBuilder();
+            ReadResultDTO readResultDTO = new ReadResultDTO();
+            try
+            {
+                if (Request.Form.Files.Count > 0)
+                {
+                    var file = Request.Form.Files[Request.Form.Files.Count - 1];
+
+                    if (file.Length > 0)
+                    {
+                        var memoryStream = new MemoryStream();
+                        file.CopyTo(memoryStream);
+                        byte[] imageFileBytes = memoryStream.ToArray();
+                        memoryStream.Flush();
+
+                        string JSONResult = await ReadTextFromStream(imageFileBytes);
+
+                        ReadResult readResult = JsonConvert.DeserializeObject<ReadResult>(JSONResult);
+                        
+                        if (!readResult.Language.Equals("unk"))
+                        {
+                            foreach (ReadLine readLine in readResult.Regions[0].Lines)
+                            {
+                                foreach (ReadWord readWord in readLine.Words)
+                                {
+                                    sb.Append(readWord.Text);
+                                    sb.Append(' ');
+                                }
+                                sb.AppendLine();
+                            }
+                        }
+                        else
+                        {
+                            sb.Append("This language is not supported.");
+                        }
+                        readResultDTO.DetectedText = sb.ToString();
+                        readResultDTO.Language = readResult.Language;
+                    }
+                }
+                return readResultDTO;
+            }
+            catch
+            {
+                ocrResultDTO.DetectedText = "Error occurred. Try again";
+                ocrResultDTO.Language = "unk";
+                return ocrResultDTO;
+            }
+        }
+
+        static async Task<string> ReadWritingFromStream(byte[] byteData) 
+        {
+            try
+            {
+                HttpClient client = new HttpClient();
+                client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", subscriptionKey);
+                string requestParameters = "language=unk&detectOrientation=true";
+                string uri = readURIBase + "?" + requestParameters;
+                HttpResponseMessage response;
+
+                using (ByteArrayContent content = new ByteArrayContent(byteData))
+                {
+                    content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                    response = await client.PostAsync(uri, content);
+                }
+
+                string contentString = await response.Content.ReadAsStringAsync();
+                string result = JToken.Parse(contentString).ToString();
+                return result;
+            }
+            catch (Exception e)
+            {
+                return e.Message;
+            }
+        }
+
+
+        // Task that converts image to byte array
         static async Task<string> ReadTextFromStream(byte[] byteData)
         {
             try
@@ -106,6 +193,8 @@ namespace IST440W_OCR_Decryption.Controllers
             }
         }
 
+
+        // Task that returns all available languages
         [HttpGet]
         public async Task<List<AvailableLanguageDTO>> GetAvailableLanguages()
         {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http;
@@ -16,7 +16,7 @@ namespace IST440W_OCR_Decryption.Controllers
 {
     [Produces("application/json")]
     [Route("api/[controller]")]
-    public class OCRController : Controller
+    public class ReadController : Controller
     {
         static string subscriptionKey;
         static string endpoint;
@@ -25,7 +25,7 @@ namespace IST440W_OCR_Decryption.Controllers
 
 
         // Set main class variables
-        public OCRController()
+        public ReadController()
         {
             subscriptionKey = "24ed91821f084f98ba0007e6b513d32b";
             endpoint = "https://ist440wfall2020ocrdecryption.cognitiveservices.azure.com/";
@@ -33,13 +33,12 @@ namespace IST440W_OCR_Decryption.Controllers
             readURIBase = endpoint + "vision/v3.0/read/analyze"
         }
 
-
-        // Task that returns OcrResultDTO, includes turning image into byte array
+        // Task that returns ReadResultDTO, includes turning image into byte array
         [HttpPost, DisableRequestSizeLimit]
-        public async Task<OcrResultDTO> Post()
+        public async Task<ReadResultDTO> Post()
         {
             StringBuilder sb = new StringBuilder();
-            OcrResultDTO ocrResultDTO = new OcrResultDTO();
+            ReadResultDTO readResultDTO = new ReadResultDTO();
             try
             {
                 if (Request.Form.Files.Count > 0)
@@ -55,14 +54,15 @@ namespace IST440W_OCR_Decryption.Controllers
 
                         string JSONResult = await ReadTextFromStream(imageFileBytes);
 
-                        OcrResult ocrResult = JsonConvert.DeserializeObject<OcrResult>(JSONResult);
-                        if (!ocrResult.Language.Equals("unk"))
+                        ReadResult readResult = JsonConvert.DeserializeObject<ReadResult>(JSONResult);
+                        
+                        if (!readResult.Language.Equals("unk"))
                         {
-                            foreach (OcrLine ocrLine in ocrResult.Regions[0].Lines)
+                            foreach (ReadLine readLine in readResult.Regions[0].Lines)
                             {
-                                foreach (OcrWord ocrWord in ocrLine.Words)
+                                foreach (ReadWord readWord in readLine.Words)
                                 {
-                                    sb.Append(ocrWord.Text);
+                                    sb.Append(readWord.Text);
                                     sb.Append(' ');
                                 }
                                 sb.AppendLine();
@@ -72,17 +72,17 @@ namespace IST440W_OCR_Decryption.Controllers
                         {
                             sb.Append("This language is not supported.");
                         }
-                        ocrResultDTO.DetectedText = sb.ToString();
-                        ocrResultDTO.Language = ocrResult.Language;
+                        readResultDTO.DetectedText = sb.ToString();
+                        readResultDTO.Language = readResult.Language;
                     }
                 }
-                return ocrResultDTO;
+                return readResultDTO;
             }
             catch
             {
-                ocrResultDTO.DetectedText = "Error occurred. Try again";
-                ocrResultDTO.Language = "unk";
-                return ocrResultDTO;
+                readResultDTO.DetectedText = "Error occurred. Try again";
+                readResultDTO.Language = "unk";
+                return readResultDTO;
             }
         }
 

@@ -107,16 +107,16 @@ namespace IST440W_OCR_Decryption.Controllers
                     response = await client.PostAsync(uri, content);
                 }
 
-                if (response.IsSuccessStatusCode)
-                    operationLocation =
+                // if (response.IsSuccessStatusCode)
+                operationLocation =
                         response.Headers.GetValues("Operation-Location").FirstOrDefault();
-                else
-                {
-                    // Display the JSON error data.
-                    string errorString = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine("\n\nResponse:\n{0}\n",
-                        JToken.Parse(errorString).ToString());
-                }
+                // else
+                // {
+                //     // Display the JSON error data.
+                //     string errorString = await response.Content.ReadAsStringAsync();
+                //     Console.WriteLine("\n\nResponse:\n{0}\n",
+                //         JToken.Parse(errorString).ToString());
+                // }
 
                 string contentString;
                 int i = 0;

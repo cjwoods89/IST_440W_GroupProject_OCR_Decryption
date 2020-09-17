@@ -54,28 +54,28 @@ namespace IST440W_OCR_Decryption.Controllers
 
                         string JSONResult = await ReadTextFromStream(imageFileBytes);
 
-                        OcrResult ocrResult = JsonConvert.DeserializeObject<OcrResult>(JSONResult);
-                        if (!ocrResult.Language.Equals("unk"))
-                        {
-                            foreach (OcrLine ocrLine in ocrResult.Regions[0].Lines)
-                            {
-                                foreach (OcrWord ocrWord in ocrLine.Words)
-                                {
-                                    sb.Append(ocrWord.Text);
-                                    sb.Append(' ');
-                                }
-                                sb.AppendLine();
-                            }
-                        }
-                        else
-                        {
-                            sb.Append("This language is not supported.");
-                        }
-                        readResultDTO.DetectedText = sb.ToString();
-                        readResultDTO.Language = ocrResult.Language;
+                        // OcrResult ocrResult = JsonConvert.DeserializeObject<OcrResult>(JSONResult);
+                        // if (!ocrResult.Language.Equals("unk"))
+                        // {
+                        //     foreach (OcrLine ocrLine in ocrResult.Regions[0].Lines)
+                        //     {
+                        //         foreach (OcrWord ocrWord in ocrLine.Words)
+                        //         {
+                        //             sb.Append(ocrWord.Text);
+                        //             sb.Append(' ');
+                        //         }
+                        //         sb.AppendLine();
+                        //     }
+                        // }
+                        // else
+                        // {
+                        //     sb.Append("This language is not supported.");
+                        // }
+                        // readResultDTO.DetectedText = sb.ToString();
+                        // readResultDTO.Language = ocrResult.Language;
 
-                        // readResultDTO.DetectedText = ;
-                        // readResultDTO.Language = ;
+                        readResultDTO.DetectedText = "Stuff";
+                        readResultDTO.Language = "en";
                     }
                 }
                 return readResultDTO;

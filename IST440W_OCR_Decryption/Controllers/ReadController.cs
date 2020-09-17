@@ -54,15 +54,14 @@ namespace IST440W_OCR_Decryption.Controllers
 
                         string JSONResult = await ReadTextFromStream(imageFileBytes);
 
-                        ReadResult readResult = JsonConvert.DeserializeObject<ReadResult>(JSONResult);
-                        
-                        if (!readResult.Language.Equals("unk"))
+                        OcrResult ocrResult = JsonConvert.DeserializeObject<OcrResult>(JSONResult);
+                        if (!ocrResult.Language.Equals("unk"))
                         {
-                            foreach (ReadLine readLine in readResult.Regions[0].Lines)
+                            foreach (OcrLine ocrLine in ocrResult.Regions[0].Lines)
                             {
-                                foreach (ReadWord readWord in readLine.Words)
+                                foreach (OcrWord ocrWord in ocrLine.Words)
                                 {
-                                    sb.Append(readWord.Text);
+                                    sb.Append(ocrWord.Text);
                                     sb.Append(' ');
                                 }
                                 sb.AppendLine();
@@ -73,7 +72,10 @@ namespace IST440W_OCR_Decryption.Controllers
                             sb.Append("This language is not supported.");
                         }
                         readResultDTO.DetectedText = sb.ToString();
-                        readResultDTO.Language = readResult.Language;
+                        readResultDTO.Language = ocrResult.Language;
+
+                        // readResultDTO.DetectedText = ;
+                        // readResultDTO.Language = ;
                     }
                 }
                 return readResultDTO;
@@ -95,6 +97,7 @@ namespace IST440W_OCR_Decryption.Controllers
                 client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", subscriptionKey);
                 string requestParameters = "language=unk&detectOrientation=true";
                 string uri = uriBase + "?" + requestParameters;
+                string operationLocation;
                 HttpResponseMessage response;
 
                 using (ByteArrayContent content = new ByteArrayContent(byteData))
@@ -103,7 +106,35 @@ namespace IST440W_OCR_Decryption.Controllers
                     response = await client.PostAsync(uri, content);
                 }
 
-                string contentString = await response.Content.ReadAsStringAsync();
+                if (response.IsSuccessStatusCode)
+                    operationLocation =
+                        response.Headers.GetValues("Operation-Location").FirstOrDefault();
+                else
+                {
+                    // Display the JSON error data.
+                    string errorString = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine("\n\nResponse:\n{0}\n",
+                        JToken.Parse(errorString).ToString());
+                    return;
+                }
+
+                string contentString;
+                int i = 0;
+                do
+                {
+                    System.Threading.Thread.Sleep(1000);
+                    response = await client.GetAsync(operationLocation);
+                    contentString = await response.Content.ReadAsStringAsync();
+                    ++i;
+                }
+                while (i < 60 && contentString.IndexOf("\"status\":\"succeeded\"") == -1);
+
+                if (i == 60 && contentString.IndexOf("\"status\":\"succeeded\"") == -1)
+                {
+                    Console.WriteLine("\nTimeout error.\n");
+                    return;
+                }
+
                 string result = JToken.Parse(contentString).ToString();
                 return result;
             }

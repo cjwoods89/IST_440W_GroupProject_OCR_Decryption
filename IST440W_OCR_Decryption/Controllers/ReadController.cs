@@ -11,6 +11,7 @@ using IST440W_OCR_Decryption.Models;
 using System.Collections.Generic;
 using Microsoft.Azure.CognitiveServices.Vision.ComputerVision.Models;
 using IST440W_OCR_Decryption.DTOModels;
+using System.Linq;
 
 namespace IST440W_OCR_Decryption.Controllers
 {
@@ -115,7 +116,6 @@ namespace IST440W_OCR_Decryption.Controllers
                     string errorString = await response.Content.ReadAsStringAsync();
                     Console.WriteLine("\n\nResponse:\n{0}\n",
                         JToken.Parse(errorString).ToString());
-                    return;
                 }
 
                 string contentString;
@@ -123,7 +123,7 @@ namespace IST440W_OCR_Decryption.Controllers
                 do
                 {
                     System.Threading.Thread.Sleep(1000);
-                    response = await client.GetAsync(operationLocation);
+                    response = await client.GetAsync(requestUri: operationLocation);
                     contentString = await response.Content.ReadAsStringAsync();
                     ++i;
                 }
@@ -132,7 +132,6 @@ namespace IST440W_OCR_Decryption.Controllers
                 if (i == 60 && contentString.IndexOf("\"status\":\"succeeded\"") == -1)
                 {
                     Console.WriteLine("\nTimeout error.\n");
-                    return;
                 }
 
                 string result = JToken.Parse(contentString).ToString();

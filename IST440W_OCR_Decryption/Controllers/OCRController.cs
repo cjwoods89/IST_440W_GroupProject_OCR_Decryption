@@ -30,7 +30,7 @@ namespace IST440W_OCR_Decryption.Controllers
             subscriptionKey = "24ed91821f084f98ba0007e6b513d32b";
             endpoint = "https://ist440wfall2020ocrdecryption.cognitiveservices.azure.com/";
             uriBase = endpoint + "vision/v2.1/ocr";
-            readURIBase = endpoint + "vision/v3.0/read/analyze"
+            readURIBase = endpoint + "vision/v3.0/read/analyze";
         }
 
 

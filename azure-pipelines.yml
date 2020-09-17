@@ -15,6 +15,11 @@ steps:
     versionSpec: '10.x'
   displayName: 'Install Node.js'
 
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'build' 
+    projects: 'IST_440W_GROUPPROJECT_OCR_DECRYPTION/IST440W_OCR_Decryption/IST440W_OCR_Decryption.csproj'
+
 - script: |
     npm install -g @angular/cli
     npm install

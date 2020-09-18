@@ -55,6 +55,7 @@ namespace IST440W_OCR_Decryption.Controllers
 
                         string JSONResult = await ReadTextFromStream(imageFileBytes);
 
+                        System.Threading.Thread.Sleep(100000);       
                         TextRecognitionResult textResult = JsonConvert.DeserializeObject<TextRecognitionResult>(JSONResult);
                         foreach (Line textLine in textResult.Lines)
                         {

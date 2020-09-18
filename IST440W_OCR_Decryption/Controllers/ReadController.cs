@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http;
@@ -11,12 +11,13 @@ using IST440W_OCR_Decryption.Models;
 using System.Collections.Generic;
 using Microsoft.Azure.CognitiveServices.Vision.ComputerVision.Models;
 using IST440W_OCR_Decryption.DTOModels;
+using System.Linq;
 
 namespace IST440W_OCR_Decryption.Controllers
 {
     [Produces("application/json")]
     [Route("api/[controller]")]
-    public class OCRController : Controller
+    public class ReadController : Controller
     {
         static string subscriptionKey;
         static string endpoint;
@@ -25,7 +26,7 @@ namespace IST440W_OCR_Decryption.Controllers
 
 
         // Set main class variables
-        public OCRController()
+        public ReadController()
         {
             subscriptionKey = "24ed91821f084f98ba0007e6b513d32b";
             endpoint = "https://ist440wfall2020ocrdecryption.cognitiveservices.azure.com/";
@@ -33,13 +34,12 @@ namespace IST440W_OCR_Decryption.Controllers
             readURIBase = endpoint + "vision/v3.0/read/analyze";
         }
 
-
-        // Task that returns OcrResultDTO, includes turning image into byte array
+        // Task that returns ReadResultDTO, includes turning image into byte array
         [HttpPost, DisableRequestSizeLimit]
-        public async Task<OcrResultDTO> Post()
+        public async Task<ReadResultDTO> Post()
         {
             StringBuilder sb = new StringBuilder();
-            OcrResultDTO ocrResultDTO = new OcrResultDTO();
+            ReadResultDTO readResultDTO = new ReadResultDTO();
             try
             {
                 if (Request.Form.Files.Count > 0)
@@ -55,34 +55,37 @@ namespace IST440W_OCR_Decryption.Controllers
 
                         string JSONResult = await ReadTextFromStream(imageFileBytes);
 
-                        OcrResult ocrResult = JsonConvert.DeserializeObject<OcrResult>(JSONResult);
-                        if (!ocrResult.Language.Equals("unk"))
-                        {
-                            foreach (OcrLine ocrLine in ocrResult.Regions[0].Lines)
-                            {
-                                foreach (OcrWord ocrWord in ocrLine.Words)
-                                {
-                                    sb.Append(ocrWord.Text);
-                                    sb.Append(' ');
-                                }
-                                sb.AppendLine();
-                            }
-                        }
-                        else
-                        {
-                            sb.Append("This language is not supported.");
-                        }
-                        ocrResultDTO.DetectedText = sb.ToString();
-                        ocrResultDTO.Language = ocrResult.Language;
+                        // OcrResult ocrResult = JsonConvert.DeserializeObject<OcrResult>(JSONResult);
+                        // if (!ocrResult.Language.Equals("unk"))
+                        // {
+                        //     foreach (OcrLine ocrLine in ocrResult.Regions[0].Lines)
+                        //     {
+                        //         foreach (OcrWord ocrWord in ocrLine.Words)
+                        //         {
+                        //             sb.Append(ocrWord.Text);
+                        //             sb.Append(' ');
+                        //         }
+                        //         sb.AppendLine();
+                        //     }
+                        // }
+                        // else
+                        // {
+                        //     sb.Append("This language is not supported.");
+                        // }
+                        // readResultDTO.DetectedText = sb.ToString();
+                        // readResultDTO.Language = ocrResult.Language;
+
+                        readResultDTO.DetectedText = "Stuff";
+                        readResultDTO.Language = "en";
                     }
                 }
-                return ocrResultDTO;
+                return readResultDTO;
             }
             catch
             {
-                ocrResultDTO.DetectedText = "Error occurred. Try again";
-                ocrResultDTO.Language = "unk";
-                return ocrResultDTO;
+                readResultDTO.DetectedText = "Error occurred. Try again";
+                readResultDTO.Language = "unk";
+                return readResultDTO;
             }
         }
 
@@ -95,6 +98,7 @@ namespace IST440W_OCR_Decryption.Controllers
                 client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", subscriptionKey);
                 string requestParameters = "language=unk&detectOrientation=true";
                 string uri = uriBase + "?" + requestParameters;
+                string operationLocation;
                 HttpResponseMessage response;
 
                 using (ByteArrayContent content = new ByteArrayContent(byteData))
@@ -103,7 +107,33 @@ namespace IST440W_OCR_Decryption.Controllers
                     response = await client.PostAsync(uri, content);
                 }
 
-                string contentString = await response.Content.ReadAsStringAsync();
+                // if (response.IsSuccessStatusCode)
+                operationLocation =
+                        response.Headers.GetValues("Operation-Location").FirstOrDefault();
+                // else
+                // {
+                //     // Display the JSON error data.
+                //     string errorString = await response.Content.ReadAsStringAsync();
+                //     Console.WriteLine("\n\nResponse:\n{0}\n",
+                //         JToken.Parse(errorString).ToString());
+                // }
+
+                string contentString;
+                int i = 0;
+                do
+                {
+                    System.Threading.Thread.Sleep(1000);
+                    response = await client.GetAsync(requestUri: operationLocation);
+                    contentString = await response.Content.ReadAsStringAsync();
+                    ++i;
+                }
+                while (i < 60 && contentString.IndexOf("\"status\":\"succeeded\"") == -1);
+
+                if (i == 60 && contentString.IndexOf("\"status\":\"succeeded\"") == -1)
+                {
+                    Console.WriteLine("\nTimeout error.\n");
+                }
+
                 string result = JToken.Parse(contentString).ToString();
                 return result;
             }

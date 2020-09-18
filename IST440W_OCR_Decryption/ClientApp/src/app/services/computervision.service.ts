@@ -25,4 +25,11 @@ export class ComputervisionService {
         return response;
       });
   }
+
+  getTextFromWrittenImage(image: FormData) {
+    return this.http.post(this.baseURL, image)
+      .pipe(response => {
+        return response;
+      });
+  }
 }

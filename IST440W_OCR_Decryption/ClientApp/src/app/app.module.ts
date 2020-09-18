@@ -8,13 +8,15 @@ import { AppComponent } from './app.component';
 import { NavMenuComponent } from './nav-menu/nav-menu.component';
 import { HomeComponent } from './home/home.component';
 import { OcrComponent } from './ocr/ocr.component';
+import { ReadComponent } from './read/read.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     NavMenuComponent,
     HomeComponent,
-    OcrComponent
+    OcrComponent,
+    ReadComponent
   ],
   imports: [
     BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),
@@ -23,6 +25,7 @@ import { OcrComponent } from './ocr/ocr.component';
     RouterModule.forRoot([
       { path: '', component: HomeComponent, pathMatch: 'full' },
       { path: 'computer-vision-ocr', component: OcrComponent },
+      { path: 'computer-vision-read', component: ReadComponent},
     ])
   ],
   providers: [],

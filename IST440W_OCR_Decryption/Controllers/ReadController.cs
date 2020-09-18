@@ -97,7 +97,7 @@ namespace IST440W_OCR_Decryption.Controllers
                 HttpClient client = new HttpClient();
                 client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", subscriptionKey);
                 string requestParameters = "language=unk&detectOrientation=true";
-                string uri = uriBase + "?" + requestParameters;
+                string uri = readURIBase + "?" + requestParameters;
                 string operationLocation;
                 HttpResponseMessage response;
 

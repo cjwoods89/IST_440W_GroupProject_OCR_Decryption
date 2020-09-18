@@ -54,8 +54,7 @@ namespace IST440W_OCR_Decryption.Controllers
                         memoryStream.Flush();
 
                         string JSONResult = await ReadTextFromStream(imageFileBytes);
-
-                        System.Threading.Thread.Sleep(100000);       
+       
                         TextRecognitionResult textResult = JsonConvert.DeserializeObject<TextRecognitionResult>(JSONResult);
                         foreach (Line textLine in textResult.Lines)
                         {
@@ -90,6 +89,7 @@ namespace IST440W_OCR_Decryption.Controllers
                 client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", subscriptionKey);
                 string requestParameters = "language=unk&detectOrientation=true";
                 string uri = readURIBase + "?" + requestParameters;
+                string operationLocation;
                 HttpResponseMessage response;
 
                 using (ByteArrayContent content = new ByteArrayContent(byteData))
@@ -98,7 +98,25 @@ namespace IST440W_OCR_Decryption.Controllers
                     response = await client.PostAsync(uri, content);
                 }
 
-                string contentString = await response.Content.ReadAsStringAsync();
+                if (response.IsSuccessStatusCode)
+                    operationLocation = response.Headers.GetValues("Operation-Location").FirstOrDefault();
+
+                string contentString;
+                int i = 0;
+                do
+                {
+                    System.Threading.Thread.Sleep(1000);
+                    response = await client.GetAsync(operationLocation);
+                    contentString = await response.Content.ReadAsStringAsync();
+                    ++i;
+                }
+                while (i < 60 && contentString.IndexOf("\"status\":\"succeeded\"") == -1);
+
+                if (i == 60 && contentString.IndexOf("\"status\":\"succeeded\"") == -1)
+                {
+                    throw new System.ArgumentException("Analysis Failed");
+                }
+
                 string result = JToken.Parse(contentString).ToString();
                 return result;
             }

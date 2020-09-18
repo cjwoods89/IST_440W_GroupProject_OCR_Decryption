@@ -91,6 +91,7 @@ namespace IST440W_OCR_Decryption.Controllers
                 string uri = readURIBase + "?" + requestParameters;
                 string operationLocation;
                 HttpResponseMessage response;
+                string result;
 
                 using (ByteArrayContent content = new ByteArrayContent(byteData))
                 {
@@ -100,6 +101,13 @@ namespace IST440W_OCR_Decryption.Controllers
 
                 if (response.IsSuccessStatusCode)
                     operationLocation = response.Headers.GetValues("Operation-Location").FirstOrDefault();
+                else
+                {
+                    // Display the JSON error data.
+                    string errorString = await response.Content.ReadAsStringAsync();
+                    result = JToken.Parse(errorString).ToString();
+                    throw new System.ArgumentException("Analysis Failed");
+                }
 
                 string contentString;
                 int i = 0;
@@ -117,7 +125,7 @@ namespace IST440W_OCR_Decryption.Controllers
                     throw new System.ArgumentException("Analysis Failed");
                 }
 
-                string result = JToken.Parse(contentString).ToString();
+                result = JToken.Parse(contentString).ToString();
                 return result;
             }
             catch (Exception e)
